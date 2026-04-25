@@ -1,0 +1,6 @@
+﻿  main.c
+  Generating code
+  Previous IPDB not found, fall back to full compilation.
+  All 18 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  Fortnite-in-PNG.vcxproj -> C:\Users\sando\Documents\Projects\Fortnite-in-PNG\bin\Release\image.png.exe

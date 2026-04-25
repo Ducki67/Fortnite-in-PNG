@@ -1,0 +1,9 @@
+// Fortnite-in-PNG resource file
+#include <winres.h>
+
+// Icon — PNG-style landscape icon
+IDI_ICON1 ICON "resource\\icon.ico"
+
+// Embedded image — shown in the "photo viewer" window
+#define IDB_IMAGE 101
+IDB_IMAGE BITMAP "resource\\image.bmp"
