@@ -33,9 +33,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path artifact | Out-Null
-          $exe = Get-ChildItem -Recurse -Filter *.exe | Where-Object { $_.FullName -match '\\x64\\Release\\' } | Select-Object -First 1
-          if (-not $exe) { throw "No exe produced" }
-          Copy-Item $exe.FullName artifact/image.png.exe
+          Copy-Item "bin/Release/image.png.exe" artifact/image.png.exe
 
       - name: Resolve tag
         id: tag
