@@ -2,12 +2,10 @@ name: Release
 
 on:
   push:
+    branches: [main, master]
     tags: ['v*']
+    paths-ignore: ['**.md', 'LICENSE']
   workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Tag (e.g. v1.0.0)'
-        required: true
 
 env:
   SOLUTION_FILE: Fortnite-in-PNG.sln
@@ -35,17 +33,25 @@ jobs:
           New-Item -ItemType Directory -Force -Path artifact | Out-Null
           Copy-Item "bin/Release/image.png.exe" artifact/image.png.exe
 
-      - name: Resolve tag
-        id: tag
+      - name: Resolve release info
+        id: info
         shell: pwsh
         run: |
-          $t = if ('${{ github.event_name }}' -eq 'workflow_dispatch') { '${{ github.event.inputs.tag }}' } else { '${{ github.ref_name }}' }
-          "tag=$t" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          if ('${{ github.ref_type }}' -eq 'tag') {
+            "tag=${{ github.ref_name }}"        | Out-File $env:GITHUB_OUTPUT -Append
+            "name=Fortnite-in-PNG ${{ github.ref_name }}" | Out-File $env:GITHUB_OUTPUT -Append
+            "prerelease=false"                  | Out-File $env:GITHUB_OUTPUT -Append
+          } else {
+            "tag=latest"                        | Out-File $env:GITHUB_OUTPUT -Append
+            "name=Latest build (${{ github.sha }})" | Out-File $env:GITHUB_OUTPUT -Append
+            "prerelease=true"                   | Out-File $env:GITHUB_OUTPUT -Append
+          }
 
-      - name: Create release
+      - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.tag.outputs.tag }}
-          name: Fortnite-in-PNG ${{ steps.tag.outputs.tag }}
+          tag_name: ${{ steps.info.outputs.tag }}
+          name: ${{ steps.info.outputs.name }}
+          prerelease: ${{ steps.info.outputs.prerelease }}
           generate_release_notes: true
           files: artifact/image.png.exe
