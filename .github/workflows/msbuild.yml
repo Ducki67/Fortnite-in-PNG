@@ -1,0 +1,39 @@
+name: MSBuild
+
+on:
+  push:
+    branches: [main, master]
+    paths-ignore: ['**.md', 'LICENSE']
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+env:
+  SOLUTION_FILE: Fortnite-in-PNG.sln
+  BUILD_CONFIGURATION: Release
+  BUILD_PLATFORM: x64
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build
+        run: msbuild "${{ env.SOLUTION_FILE }}" /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:Platform=${{ env.BUILD_PLATFORM }}
+
+      - name: Stage artifact
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path artifact | Out-Null
+          $exe = Get-ChildItem -Recurse -Filter *.exe | Where-Object { $_.FullName -match '\\x64\\Release\\' } | Select-Object -First 1
+          if (-not $exe) { throw "No exe produced" }
+          Copy-Item $exe.FullName artifact/image.png.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Fortnite-in-PNG
+          path: artifact/image.png.exe

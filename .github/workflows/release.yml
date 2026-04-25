@@ -1,0 +1,53 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag (e.g. v1.0.0)'
+        required: true
+
+env:
+  SOLUTION_FILE: Fortnite-in-PNG.sln
+  BUILD_CONFIGURATION: Release
+  BUILD_PLATFORM: x64
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build
+        run: msbuild "${{ env.SOLUTION_FILE }}" /m /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:Platform=${{ env.BUILD_PLATFORM }}
+
+      - name: Stage artifact
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path artifact | Out-Null
+          $exe = Get-ChildItem -Recurse -Filter *.exe | Where-Object { $_.FullName -match '\\x64\\Release\\' } | Select-Object -First 1
+          if (-not $exe) { throw "No exe produced" }
+          Copy-Item $exe.FullName artifact/image.png.exe
+
+      - name: Resolve tag
+        id: tag
+        shell: pwsh
+        run: |
+          $t = if ('${{ github.event_name }}' -eq 'workflow_dispatch') { '${{ github.event.inputs.tag }}' } else { '${{ github.ref_name }}' }
+          "tag=$t" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: Fortnite-in-PNG ${{ steps.tag.outputs.tag }}
+          generate_release_notes: true
+          files: artifact/image.png.exe
